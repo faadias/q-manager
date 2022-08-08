@@ -92,9 +92,11 @@ export default class QClientRabbitMq implements IQClient {
   }
 
   async stop() {
-    await this.consumeChannel.close();
-    await this.publishChannel.close();
-    await this.queueChannel.close();
+    await Promise.all([
+      this.consumeChannel.close(),
+      this.publishChannel.close(),
+      this.queueChannel.close()
+    ]);
     await this.connection.close();
   }
 }

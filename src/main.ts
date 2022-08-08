@@ -67,6 +67,14 @@ async function startServer(server: Server, qClient: IQClient) {
 
   process.on("SIGTERM", () => shutdownServer(httpServer, qClient));
   process.on("SIGINT", () => shutdownServer(httpServer, qClient));
+  process.on("uncaughtException", (error, origin) => {
+    console.error(`${origin} signal received: ${error}`);
+    shutdownServer(httpServer, qClient);
+  });
+  process.on("unhandledRejection", (error) => {
+    console.error(`uncaught promise: ${error}`);
+    shutdownServer(httpServer, qClient);
+  });
 }
 
 async function setupQClient(qClient: IQClient) {
@@ -85,9 +93,9 @@ async function setupQClient(qClient: IQClient) {
 }
 
 async function shutdownServer(httpServer: HttpServer, qClient: IQClient) {
-  console.info("Received kill signal, shutting down gracefully");
-  httpServer.close(() => {
-    qClient.stop();
+  console.info("Shutting down gracefully");
+  httpServer.close(async () => {
+    await qClient.stop();
     console.info("Closed remaining connections");
     process.exit(0);
   });
