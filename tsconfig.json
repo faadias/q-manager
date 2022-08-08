@@ -2,12 +2,13 @@
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDirs": ["src", "test"],
     "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "allowJs": true,
     "typeRoots": ["./types", "./node_modules/@types"] //precisa colocar essa linha (nessa ordem) para funcionar o module augmentation no ts-node-dev, senão ele se perde e fala que o Request do express não tem os atributos aumentados
   },
-  "include": ["src", "types"],
+  "include": ["src", "test", "types"],
   "exclude": ["node_modules"]
 }

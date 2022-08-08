@@ -10,7 +10,8 @@ export default class QClientRabbitMq implements IQClient {
   private constructor(
     private readonly connection: Connection,
     private readonly publishChannel: ConfirmChannel,
-    private readonly consumeChannel: Channel
+    private readonly consumeChannel: Channel,
+    private readonly queueChannel: Channel
   ) {}
 
   public static async getInstance(): Promise<QClientRabbitMq> {
@@ -39,11 +40,13 @@ export default class QClientRabbitMq implements IQClient {
 
     const publishChannel = await connection.createConfirmChannel();
     const consumeChannel = await connection.createChannel();
+    const queueChannel = await connection.createChannel();
 
     return (QClientRabbitMq.instance = new QClientRabbitMq(
       connection,
       publishChannel,
-      consumeChannel
+      consumeChannel,
+      queueChannel
     ));
   }
 
@@ -63,7 +66,7 @@ export default class QClientRabbitMq implements IQClient {
 
   async registerQueue(queue: string): Promise<void> {
     this.queues.add(queue);
-    await this.consumeChannel.assertQueue(queue, { durable: true });
+    await this.queueChannel.assertQueue(queue, { durable: true });
   }
 
   async registerConsumer(consumer: IConsumer): Promise<void> {
@@ -91,6 +94,7 @@ export default class QClientRabbitMq implements IQClient {
   async stop() {
     await this.consumeChannel.close();
     await this.publishChannel.close();
+    await this.queueChannel.close();
     await this.connection.close();
   }
 }
