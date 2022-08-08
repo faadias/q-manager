@@ -8,7 +8,7 @@
       "exposedHeaders": ["Content-Disposition"]
     },
     "json": {
-      "limit": "100mb"
+      "limit": "20mb"
     },
     "urlencoded": {
       "extended": false,

@@ -5,7 +5,7 @@ import bodyParser from "body-parser";
 import config from "config";
 import cors from "cors";
 import express from "express";
-import { readdirSync } from "fs";
+import { readdirSync, existsSync } from "fs";
 import { Server as HttpServer } from "http";
 import { join } from "path";
 import { v4 as uuid } from "uuid";
@@ -40,15 +40,34 @@ function setupGlobalMiddlewares(server: Server, qClient: IQClient) {
 }
 
 async function setupControllers(server: Server) {
-  const controllersFolder = join(__dirname, "controller");
+  const controllerFolderName = "controller";
+  const controllersFolder = join(__dirname, controllerFolderName);
   const onlyTSorJSFilesFilter = (filename: string) => filename.match(/[tj]s$/);
-  const controllersFiles = readdirSync(controllersFolder).filter(
-    onlyTSorJSFilesFilter
-  );
+  const controllersFiles = existsSync(controllersFolder)
+    ? readdirSync(controllersFolder)
+        .filter(onlyTSorJSFilesFilter)
+        .map((filename) => join(controllersFolder, filename))
+    : [];
+
+  if (process.env.NODE_ENV === "test") {
+    const controllersTestFolder = join(
+      __dirname,
+      "..",
+      "test",
+      controllerFolderName
+    );
+    if (existsSync(controllersTestFolder)) {
+      controllersFiles.push(
+        ...readdirSync(controllersTestFolder)
+          .filter(onlyTSorJSFilesFilter)
+          .map((filename) => join(controllersTestFolder, filename))
+      );
+    }
+  }
 
   const controllers: unknown[] = [];
   for (const filename of controllersFiles) {
-    const module = await import(join(controllersFolder, filename));
+    const module = await import(filename);
     controllers.push(new module[Object.keys(module)[0]]());
   }
   server.addControllers(controllers);
@@ -78,16 +97,34 @@ async function startServer(server: Server, qClient: IQClient) {
 }
 
 async function setupQClient(qClient: IQClient) {
-  const consumersFolder = join(__dirname, "consumer");
+  const consumerFolderName = "consumer";
+  const consumersFolder = join(__dirname, consumerFolderName);
   const onlyTSorJSFilesFilter = (filename: string) => filename.match(/[tj]s$/);
-  const consumersFiles = readdirSync(consumersFolder).filter(
-    onlyTSorJSFilesFilter
-  );
+  const consumersFiles = existsSync(consumersFolder)
+    ? readdirSync(consumersFolder)
+        .filter(onlyTSorJSFilesFilter)
+        .map((filename) => join(consumersFolder, filename))
+    : [];
+  if (process.env.NODE_ENV === "test") {
+    const consumersTestFolder = join(
+      __dirname,
+      "..",
+      "test",
+      consumerFolderName
+    );
+    if (existsSync(consumersTestFolder)) {
+      consumersFiles.push(
+        ...readdirSync(consumersTestFolder)
+          .filter(onlyTSorJSFilesFilter)
+          .map((filename) => join(consumersTestFolder, filename))
+      );
+    }
+  }
 
   for (const filename of consumersFiles) {
-    const module = await import(join(consumersFolder, filename));
+    const module = await import(filename);
     const consumer: IConsumer = new module[Object.keys(module)[0]]();
-    qClient.registerQueue(consumer.queue);
+    await qClient.registerQueue(consumer.queue);
     qClient.registerConsumer(consumer);
   }
 }
@@ -95,8 +132,13 @@ async function setupQClient(qClient: IQClient) {
 async function shutdownServer(httpServer: HttpServer, qClient: IQClient) {
   console.info("Shutting down gracefully");
   httpServer.close(async () => {
-    await qClient.stop();
-    console.info("Closed remaining connections");
-    process.exit(0);
+    try {
+      await qClient.stop();
+      console.info("Closed remaining connections");
+      process.exit(0);
+    } catch (error) {
+      console.error(`Unable to shutdown: ${error}`);
+      process.exit(1);
+    }
   });
 }
