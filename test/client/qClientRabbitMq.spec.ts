@@ -52,6 +52,21 @@ describe("RabbitMQ Client Specs", () => {
     );
   });
 
+  it("should publish messages on an existing queue", async () => {
+    const queue = genQueueName();
+    await client.registerQueue(queue);
+
+    const publishingTimes = 11;
+    for (let i = 0; i < publishingTimes; i++) {
+      await client.publish(queue, { message: `test data ${i + 1}` });
+    }
+    await waitSomeTime(1000); //precisa aguardar até o RabbitMQ efetivamente colocar as mensagens na fila
+
+    const queueSize = await client.getQueueSize(queue);
+
+    expect(queueSize).toBe(publishingTimes);
+  });
+
   it("should publish and consume messages on an existing queue", async () => {
     const queue = genQueueName();
     await client.registerQueue(queue);
@@ -62,10 +77,14 @@ describe("RabbitMQ Client Specs", () => {
     };
     const publishingTimes = 3;
     for (let i = 0; i < publishingTimes; i++) {
-      await client.publish(queue, { message: `test data ${i + 1}` });
+      client.publish(queue, { message: `test data ${i + 1}` });
     }
+    await waitSomeTime(1000); //precisa aguardar até o RabbitMQ efetivamente colocar as mensagens na fila
+
     await client.registerConsumer(testConsumer);
+
     await waitSomeTime(1000);
+
     expect(testConsumer.consume).toHaveBeenCalledTimes(publishingTimes);
     expect(testConsumer.consume).toHaveBeenLastCalledWith({
       message: `test data ${publishingTimes}`

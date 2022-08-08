@@ -91,6 +91,11 @@ export default class QClientRabbitMq implements IQClient {
     return this.queues.has(queue);
   }
 
+  async getQueueSize(queue: string): Promise<number> {
+    const queueData = await this.queueChannel.checkQueue(queue);
+    return queueData.messageCount;
+  }
+
   async stop() {
     await Promise.all([
       this.consumeChannel.close(),

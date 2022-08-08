@@ -3,6 +3,7 @@ export interface IQClient {
   registerConsumer(consumer: IConsumer): Promise<void>;
   registerQueue(queue: string): Promise<void>;
   queueExists(queue: string): Promise<boolean>;
+  getQueueSize(queue: string): Promise<number>;
   stop(): Promise<void>;
 }
 
