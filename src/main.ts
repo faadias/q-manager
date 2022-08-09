@@ -11,15 +11,38 @@ import { join } from "path";
 import { v4 as uuid } from "uuid";
 import { IConsumer, IQClient } from "./client/qClientInterface";
 import QClientRabbitMq from "./client/qClientRabbitMq";
+import os from "node:os";
+import cluster from "node:cluster";
 
-(async function init(): Promise<void> {
+cluster.isPrimary && process.env.NODE_ENV !== "development"
+  ? runPrimaryProcess()
+  : runWorkerProcess();
+
+function runPrimaryProcess() {
+  const procCount = os.cpus().length;
+  console.info(`Primary process ${process.pid} is running`);
+  console.info(`Forking server with ${procCount} processes`);
+  for (let i = 0; i < procCount; i++) {
+    cluster.fork();
+  }
+  cluster.on("exit", (worker, code, signal) => {
+    if (code !== 0 && !worker.exitedAfterDisconnect) {
+      console.info(
+        `Worker ${process.pid} died with signal ${signal}. Scheduling a new one...`
+      );
+      cluster.fork();
+    }
+  });
+}
+
+async function runWorkerProcess(): Promise<void> {
   const qClient = await QClientRabbitMq.getInstance();
   const server = new Server();
   setupGlobalMiddlewares(server, qClient);
   await setupControllers(server);
   await startServer(server, qClient);
   await setupQClient(qClient);
-})();
+}
 
 function setupGlobalMiddlewares(server: Server, qClient: IQClient) {
   server.app.use(
