@@ -1,6 +1,6 @@
 import client, { Channel, ConfirmChannel, Connection } from "amqplib";
 import { QueueDoesNotExistError } from "../error/queueDoesNotExistError";
-import { IConsumer, IQClient } from "./qClientInterface";
+import { IConsumer, IQClient, Message } from "./qClientInterface";
 
 export default class QClientRabbitMq implements IQClient {
   static instance: QClientRabbitMq | null = null;
@@ -50,7 +50,7 @@ export default class QClientRabbitMq implements IQClient {
     ));
   }
 
-  async publish(queue: string, data: unknown): Promise<void> {
+  async publish(queue: string, data: Message): Promise<void> {
     if (!data) {
       return;
     }

@@ -1,6 +1,6 @@
 import { IConsumer, Message } from "./../../src/client/qClientInterface";
 import { QueueDoesNotExistError } from "../../src/error/queueDoesNotExistError";
-import QClientRabbitMq from "../../src/client/qClientRabbitMq";
+import QClientMemory from "./qClientMemory";
 import { v4 } from "uuid";
 
 function genQueueName(): string {
@@ -11,17 +11,17 @@ function waitSomeTime(timeInMillis: number) {
   return new Promise((resolve) => setTimeout(resolve, timeInMillis));
 }
 
-let client: QClientRabbitMq;
+let client: QClientMemory;
 
 beforeAll(async () => {
-  client = await QClientRabbitMq.getInstance();
+  client = await QClientMemory.getInstance();
 });
 afterAll(async () => {
   await waitSomeTime(3000);
   await client.stop();
 });
 
-describe("RabbitMQ Client Specs", () => {
+describe("Memory Client Specs", () => {
   it("should return true only if a queue exists", async () => {
     const newQueue = genQueueName();
     expect(client.queueExists(newQueue)).resolves.toBe(false);
@@ -66,7 +66,7 @@ describe("RabbitMQ Client Specs", () => {
         data: { message: `test data ${i + 1}` }
       });
     }
-    await waitSomeTime(1000); //precisa aguardar até o RabbitMQ efetivamente colocar as mensagens na fila
+    await waitSomeTime(1000);
 
     const queueSize = await client.getQueueSize(queue);
 
@@ -90,7 +90,7 @@ describe("RabbitMQ Client Specs", () => {
       };
       client.publish(queue, message);
     }
-    await waitSomeTime(1000); //precisa aguardar até o RabbitMQ efetivamente colocar as mensagens na fila
+    await waitSomeTime(1000);
 
     await client.registerConsumer(testConsumer);
 
