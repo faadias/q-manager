@@ -1,6 +1,6 @@
 import { Controller, Post } from "@overnightjs/core";
 import { Request, Response } from "express";
-import { BaseRawDataProducerController } from "../../src/controller/baseProducerController";
+import { BaseRawDataProducerController } from "../../src/controller/baseRawDataProducerController";
 
 @Controller("test")
 export class TestProducerController extends BaseRawDataProducerController {
