@@ -46,7 +46,7 @@ describe("Memory Client Specs", () => {
       queue: nonExistentQueue,
       name: "test-consumer",
       consume(msg) {
-        console.log(msg);
+        console.info(msg);
       }
     };
     expect(client.queueExists(nonExistentQueue)).resolves.toBe(false);

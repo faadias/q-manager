@@ -15,9 +15,6 @@
       "limit": "20mb"
     }
   },
-  "auth": {
-    "apiKey": ""
-  },
   "logger": {
     "enabled": true,
     "level": "debug"

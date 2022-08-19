@@ -6,7 +6,7 @@ export class TestConsumer implements IConsumer {
   readonly name = "test-consumer";
   consume(message: Message): void {
     console.info(
-      `"Test consumed: ${message.id} - ${crypto
+      `Test consumed: ${message.id} - ${crypto
         .createHash("md5")
         .update(JSON.stringify(message.data))
         .digest("hex")}`
