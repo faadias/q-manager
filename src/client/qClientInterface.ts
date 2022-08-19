@@ -1,4 +1,4 @@
-export interface IQClient {
+export interface IQClient extends IPublisher {
   publish(queue: string, message: Message): Promise<void>;
   registerConsumer(consumer: IConsumer): Promise<void>;
   registerQueue(queue: string): Promise<void>;
