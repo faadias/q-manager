@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { authMiddleware } from "../../src/middleware/authMiddleware";
+import { authMiddleware } from "./authMiddleware";
 
 beforeEach(() => (process.env.API_KEY = ""));
 

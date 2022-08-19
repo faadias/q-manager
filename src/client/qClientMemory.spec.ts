@@ -1,5 +1,5 @@
-import { IConsumer, Message } from "./../../src/client/qClientInterface";
-import { QueueDoesNotExistError } from "../../src/error/queueDoesNotExistError";
+import { IConsumer, Message } from "./qClientInterface";
+import { QueueDoesNotExistError } from "../error/queueDoesNotExistError";
 import QClientMemory from "./qClientMemory";
 import { v4 } from "uuid";
 

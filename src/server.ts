@@ -10,6 +10,8 @@ import { IConsumer, IQClient } from "./client/qClientInterface";
 import { v4 as uuid } from "uuid";
 
 export class QManagerServer extends Server {
+  private httpServer!: HttpServer;
+
   constructor(private readonly qClient: IQClient) {
     super();
   }
@@ -21,21 +23,37 @@ export class QManagerServer extends Server {
     await this.initialize();
   }
 
+  async stop() {
+    console.info("Shutting down gracefully");
+    return new Promise((resolve, reject) => {
+      this.httpServer.close(async () => {
+        try {
+          await this.qClient.stop();
+          console.info("Closed remaining connections");
+          resolve("Success");
+        } catch (error) {
+          console.error(`Unable to shutdown: ${error}`);
+          reject(error);
+        }
+      });
+    });
+  }
+
   private async initialize() {
     const port = parseInt(process.env.PORT || "3000");
-    const httpServer = this.app.listen(port, () => {
+    this.httpServer = this.app.listen(port, () => {
       console.info(`Server listening on port: ${port}`);
     });
 
-    process.on("SIGTERM", () => shutdownServer(httpServer, this.qClient));
-    process.on("SIGINT", () => shutdownServer(httpServer, this.qClient));
+    process.on("SIGTERM", () => endProcess(this));
+    process.on("SIGINT", () => endProcess(this));
     process.on("uncaughtException", (error, origin) => {
       console.error(`${origin} signal received: ${error}`);
-      shutdownServer(httpServer, this.qClient);
+      endProcess(this);
     });
     process.on("unhandledRejection", (error) => {
       console.error(`uncaught promise: ${error}`);
-      shutdownServer(httpServer, this.qClient);
+      endProcess(this);
     });
   }
 
@@ -126,16 +144,9 @@ async function importModuleFromFilename(filename: string) {
   return new module[Object.keys(module)[0]]();
 }
 
-async function shutdownServer(httpServer: HttpServer, qClient: IQClient) {
-  console.info("Shutting down gracefully");
-  httpServer.close(async () => {
-    try {
-      await qClient.stop();
-      console.info("Closed remaining connections");
-      process.exit(0);
-    } catch (error) {
-      console.error(`Unable to shutdown: ${error}`);
-      process.exit(1);
-    }
-  });
+function endProcess(server: QManagerServer) {
+  server
+    .stop()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 }
