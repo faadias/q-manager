@@ -10,17 +10,17 @@ cluster.isPrimary && process.env.NODE_ENV !== "development"
   : runWorkerProcess();
 
 function runPrimaryProcess() {
-  const MAX_THREADS = 10;
-  const MIN_THREADS = 1;
+  const MAX_WORKERS = 10;
+  const MIN_WORKERS = 1;
   const cpusCount = os.cpus().length;
-  let threadsToRun =
-    (process.env.THREADS && parseInt(process.env.THREADS)) || cpusCount;
-  threadsToRun = Math.max(Math.min(threadsToRun, MAX_THREADS), MIN_THREADS);
+  let workersToRun =
+    (process.env.WORKERS && parseInt(process.env.WORKERS)) || cpusCount;
+  workersToRun = Math.max(Math.min(workersToRun, MAX_WORKERS), MIN_WORKERS);
 
   console.info(`Primary process ${process.pid} is running`);
-  console.info(`Forking server with ${threadsToRun} processes`);
+  console.info(`Forking server with ${workersToRun} processes`);
 
-  for (let i = 0; i < threadsToRun; i++) {
+  for (let i = 0; i < workersToRun; i++) {
     cluster.fork();
   }
 
