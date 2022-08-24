@@ -6,6 +6,7 @@ module.exports = {
   testEnvironment: "node",
   testMatch: ["<rootDir>/src/**/*.spec.ts"],
   clearMocks: true,
+  collectCoverage: true,
   transform: {
     "^.+\\.ts?$": "ts-jest"
   },

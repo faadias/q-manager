@@ -1,6 +1,7 @@
 export interface IQClient extends IPublisher {
   publish(queue: string, message: Message): Promise<void>;
   registerConsumer(consumer: IConsumer): Promise<void>;
+  unregisterConsumer(consumerName: string): Promise<void>;
   registerQueue(queue: string): Promise<void>;
   queueExists(queue: string): Promise<boolean>;
   getQueueSize(queue: string): Promise<number>;

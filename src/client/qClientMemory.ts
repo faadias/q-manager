@@ -45,6 +45,17 @@ export default class QClientMemory implements IQClient {
     consumers[queue].push(consumer);
   }
 
+  async unregisterConsumer(consumerName: string): Promise<void> {
+    for (const queueName in consumers) {
+      const consumerIndex = consumers[queueName].findIndex(
+        (consumer) => consumer.name === consumerName
+      );
+      if (consumerIndex !== -1) {
+        consumers[queueName].splice(consumerIndex, 1);
+      }
+    }
+  }
+
   async registerQueue(queue: string): Promise<void> {
     if (!(queue in memory)) {
       memory[queue] = [];
@@ -85,19 +96,17 @@ export default class QClientMemory implements IQClient {
       }
 
       inProgressPolling = true;
-
       for (const queue in consumers) {
         consumers[queue].forEach(async (consumer) => {
-          while (memory[queue].length > 0) {
-            const message = memory[queue].shift();
-            if (!message || !this.polling) {
-              break;
-            }
-            try {
-              consumer.consume(message);
-            } catch (error) {
-              memory[queue].unshift(message);
-            }
+          const message = memory[queue].shift();
+          if (!message || !this.polling) {
+            return;
+          }
+
+          try {
+            consumer.consume(message);
+          } catch (error) {
+            memory[queue].unshift(message);
           }
         });
       }

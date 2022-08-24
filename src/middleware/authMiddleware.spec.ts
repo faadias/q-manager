@@ -22,6 +22,26 @@ describe("AuthMiddleware unit tests", () => {
     expect(resFake.status).toHaveBeenCalledWith(StatusCodes.UNAUTHORIZED);
   });
 
+  it("should return 401 if an api key is defined in env var but the provided one as query parameter is different", async () => {
+    process.env.API_KEY = "bananas";
+
+    const reqFake = {
+      query: {
+        apiKey: "apples"
+      }
+    };
+    const resFake = {
+      status: jest.fn(() => ({
+        send: jest.fn()
+      }))
+    };
+    const nextFake = jest.fn();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await authMiddleware(reqFake as any, resFake as any, nextFake);
+    expect(nextFake).not.toHaveBeenCalled();
+    expect(resFake.status).toHaveBeenCalledWith(StatusCodes.UNAUTHORIZED);
+  });
+
   it("should allow access if the correct api key was given", async () => {
     const apiKey = "bananas";
     process.env.API_KEY = apiKey;

@@ -51,10 +51,6 @@ export default class QClientRabbitMq implements IQClient {
   }
 
   async publish(queue: string, data: Message): Promise<void> {
-    if (!data) {
-      return;
-    }
-
     if (!(await this.queueExists(queue))) {
       throw new QueueDoesNotExistError(queue);
     }
@@ -74,17 +70,25 @@ export default class QClientRabbitMq implements IQClient {
       throw new QueueDoesNotExistError(consumer.queue);
     }
 
-    this.consumeChannel.consume(consumer.queue, (message) => {
-      if (message) {
-        try {
-          consumer.consume(JSON.parse(message.content.toString()));
-          this.consumeChannel.ack(message);
-        } catch (error) {
-          console.error(`AMQP:Consumer '${consumer.name}' Error:`, error);
-          this.consumeChannel.nack(message);
+    await this.consumeChannel.consume(
+      consumer.queue,
+      (message) => {
+        if (message) {
+          try {
+            consumer.consume(JSON.parse(message.content.toString()));
+            this.consumeChannel.ack(message);
+          } catch (error) {
+            // console.error(`AMQP:Consumer '${consumer.name}' Error:`, error);
+            this.consumeChannel.nack(message);
+          }
         }
-      }
-    });
+      },
+      { consumerTag: consumer.name }
+    );
+  }
+
+  async unregisterConsumer(consumerName: string): Promise<void> {
+    await this.consumeChannel.cancel(consumerName);
   }
 
   async queueExists(queue: string): Promise<boolean> {
@@ -92,6 +96,10 @@ export default class QClientRabbitMq implements IQClient {
   }
 
   async getQueueSize(queue: string): Promise<number> {
+    if (!(await this.queueExists(queue))) {
+      throw new QueueDoesNotExistError(queue);
+    }
+
     const queueData = await this.queueChannel.checkQueue(queue);
     return queueData.messageCount;
   }
